@@ -1,432 +1,80 @@
-
 <!DOCTYPE html>
-
 <html lang="uk">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>MOONITOR | OSINT Tactical Radar</title>
-
+    <title>MOONITOR | Tactical Radar</title>
+    
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
+    
     <style>
-
-        :root { --main-red: #ff0000; --bg-dark: #050505; --panel-bg: rgba(10, 10, 10, 0.95); }
-
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: 'Segoe UI', Roboto, sans-serif; color: #fff; overflow: hidden; }
-
-        #map { height: 100vh; width: 100%; background: var(--bg-dark); transition: filter 0.3s; }
-
-
-
-        /* ПРЕЛОАДЕР */
-
-        #preloader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; transition: opacity 0.8s; }
-
-        .radar-loader { width: 100px; height: 100px; border: 1px solid #222; border-radius: 50%; position: relative; display: flex; align-items: center; justify-content: center; }
-
-        .radar-loader::before { content: ''; position: absolute; width: 100%; height: 100%; border: 2px solid transparent; border-top-color: var(--main-red); border-radius: 50%; animation: spin 2s linear infinite; }
-
-        .radar-center { width: 10px; height: 10px; background: var(--main-red); border-radius: 50%; box-shadow: 0 0 20px var(--main-red); animation: pulse 1.5s infinite; }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.6); opacity: 0.4; } 100% { transform: scale(1); opacity: 1; } }
-
-
-
-        /* ВІТАЛЬНИЙ ЕКРАН */
-
-        #welcome-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(15px); z-index: 9999; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.6s; }
-
-        .welcome-content { max-width: 500px; width: 90%; padding: 30px; background: #0a0a0a; border-radius: 15px; border: 1px solid #1a1a1a; }
-
-        .welcome-logo { width: 50px; margin: 0 auto 15px; display: block; filter: drop-shadow(0 0 8px var(--main-red)); }
-
-        .policy-container { max-height: 300px; overflow-y: auto; padding-right: 10px; border-top: 1px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; margin: 20px 0; font-size: 13px; color: #888; }
-
-        .policy-container h2 { color: var(--main-red); font-size: 11px; letter-spacing: 1px; }
-
-        .btn-red { background: var(--main-red); color: #fff; border: none; padding: 15px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; }
-
-
-
-        /* ПАНЕЛЬ РЕЖИМІВ (SETTINGS) */
-
-        .settings-sidebar { position: fixed; right: -320px; top: 0; width: 280px; height: 100%; background: var(--panel-bg); backdrop-filter: blur(10px); border-left: 1px solid #222; z-index: 6000; padding: 25px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
-
-        .settings-sidebar.active { right: 0; }
-
-        .setting-group { margin-bottom: 25px; }
-
-        .setting-group h3 { font-size: 10px; color: var(--main-red); letter-spacing: 2px; margin-bottom: 15px; text-transform: uppercase; }
-
-        .map-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-
-        .map-option { background: #111; border: 1px solid #333; padding: 12px; text-align: center; font-size: 10px; cursor: pointer; border-radius: 4px; transition: 0.2s; }
-
-        .map-option.active { border-color: var(--main-red); color: var(--main-red); background: rgba(255,0,0,0.05); }
-
-        input[type=range] { width: 100%; accent-color: var(--main-red); cursor: pointer; }
-
-
-
-        /* ІНТЕРФЕЙС ТА КНОПКИ */
-
-        .top-right-tools { position: absolute; top: 20px; right: 20px; z-index: 5500; display: flex; gap: 10px; }
-
-        .tool-btn { background: rgba(0,0,0,0.8); border: 1px solid #333; color: #fff; padding: 10px 18px; border-radius: 25px; cursor: pointer; font-size: 12px; font-weight: bold; backdrop-filter: blur(5px); }
-
-        .admin-panel { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 5000; display: none; background: var(--panel-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--main-red); flex-direction: column; gap: 10px; width: 420px; }
-
-        .type-selector { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
-
-        .type-btn { background: #111; color: #777; border: 1px solid #222; padding: 8px 12px; cursor: pointer; font-size: 10px; text-transform: uppercase; border-radius: 4px; }
-
-        .type-btn.active { background: var(--main-red); color: #fff; border-color: #fff; }
-
-        .info-panel { position: absolute; top: 20px; left: 20px; z-index: 5000; background: var(--panel-bg); border-left: 4px solid var(--main-red); padding: 15px; width: 200px; display: none; border-radius: 4px; }
-
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: sans-serif; overflow: hidden; color: #fff; }
+        #map { height: 100vh; width: 100%; background: #050505; visibility: hidden; }
+        
+        /* Екран авторизації */
+        #auth-screen { 
+            position: fixed; inset: 0; background: #000; 
+            z-index: 9999; display: flex; align-items: center; justify-content: center; 
+        }
+        .auth-box { 
+            max-width: 350px; width: 85%; padding: 30px; 
+            background: #0d0d0d; border-radius: 15px; border: 1px solid #222; text-align: center; 
+        }
+        
+        .btn-red { 
+            background: #1a1a1a; color: #444; border: none; padding: 15px; 
+            border-radius: 8px; cursor: not-allowed; width: 100%; 
+            font-weight: bold; margin-top: 20px; transition: 0.3s;
+        }
+        .btn-red.active { background: #ff0000; color: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
     </style>
-
 </head>
-
 <body>
 
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h1 style="letter-spacing: 5px; margin-bottom: 5px;">MOONITOR</h1>
+            <p style="color: #444; font-size: 10px; margin-bottom: 25px; text-transform: uppercase;">Система моніторингу повітряних цілей</p>
 
-
-    <div id="preloader"><div class="radar-loader"><div class="radar-center"></div></div></div>
-
-
-
-    <div id="welcome-screen">
-
-        <div class="welcome-content">
-
-            <img src="https://cdn-icons-png.flaticon.com/512/2592/2592201.png" class="welcome-logo">
-
-            <h1 style="text-align:center; letter-spacing:3px;">MOONITOR.RADAR</h1>
-
-            <div class="policy-container">
-
-                <h2>01. ПРАВОВИЙ СТАТУС</h2>
-
-                <p>Проект використовує OSINT методи збору даних з відкритих джерел.</p>
-
-                <h2>02. БЕЗПЕКА ТА ВЕРИФІКАЦІЯ</h2>
-
-                <p>Застосовуються протоколи просторової детермінації. Дані про ППО та ЗСУ не відображаються.</p>
-
-                <h2>03. КОНТАКТИ</h2>
-
-                <p>Офіційний бот підтримки: <b>@Monitor_uabot</b></p>
-
+            <div style="display: flex; justify-content: center;">
+                <div class="cf-turnstile" 
+                     data-sitekey="0x4AAAAAAACY-UjwFSgMOGSUG" 
+                     data-callback="onVerify"
+                     data-theme="dark"></div>
             </div>
 
-            <button class="btn-red" onclick="closeWelcome()">ПРИЙНЯТИ ТА УВІЙТИ</button>
-
+            <button id="enter-btn" class="btn-red" onclick="startSystem()" disabled>УВІЙТИ В СИСТЕМУ</button>
         </div>
-
     </div>
-
-
-
-    <div id="settings-panel" class="settings-sidebar">
-
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px;">
-
-            <h2 style="margin:0; font-size:16px; letter-spacing:2px;">НАЛАШТУВАННЯ</h2>
-
-            <button onclick="toggleSettings()" style="background:none; border:none; color:#555; cursor:pointer; font-size:22px;">✕</button>
-
-        </div>
-
-        <div class="setting-group">
-
-            <h3>ТИП МАПИ</h3>
-
-            <div class="map-grid">
-
-                <div id="opt-dark" class="map-option active" onclick="changeMap('dark')">ТЕМНА</div>
-
-                <div id="opt-sat" class="map-option" onclick="changeMap('sat')">СУПУТНИК</div>
-
-                <div id="opt-terrain" class="map-option" onclick="changeMap('terrain')">РЕЛЬЄФ</div>
-
-                <div id="opt-gray" class="map-option" onclick="changeMap('gray')">СІРА</div>
-
-            </div>
-
-        </div>
-
-        <div class="setting-group">
-
-            <h3>ВІЗУАЛІЗАЦІЯ</h3>
-
-            <label style="font-size:11px; color:#555;">Яскравість мапи</label>
-
-            <input type="range" min="20" max="100" value="100" oninput="adjustBrightness(this.value)">
-
-            <label style="font-size:11px; color:#555; margin-top:15px; display:block;">Розмір іконок цілей</label>
-
-            <input type="range" min="20" max="60" value="32" oninput="adjustIconSize(this.value)">
-
-        </div>
-
-    </div>
-
-
-
-    <div class="top-right-tools">
-
-        <button class="tool-btn" onclick="toggleSettings()">⚙️ РЕЖИМ</button>
-
-    </div>
-
-
 
     <div id="map"></div>
 
-
-
-    <div id="info-box" class="info-panel">
-
-        <h4 style="color:var(--main-red); margin:0 0 10px 0; font-size:12px;">ЦІЛЬ ІДЕНТИФІКОВАНО</h4>
-
-        <p style="font-size:13px; margin:5px 0;">Тип: <b id="info-type-text">...</b></p>
-
-        <p style="font-size:13px; margin:5px 0;">Швидкість: <b id="info-speed" style="color:#0f0;">0</b> км/год</p>
-
-        <button onclick="this.parentElement.style.display='none'" style="width:100%; background:#222; color:#fff; border:none; padding:5px; margin-top:10px; cursor:pointer; font-size:10px;">ЗАКРИТИ</button>
-
-    </div>
-
-
-
-    <div id="admin-ui" class="admin-panel">
-
-        <div class="type-selector" id="btns"></div>
-
-        <button class="btn-red" id="l-btn" style="padding:10px; font-size:12px;" onclick="toggleLaunch()">СТВОРИТИ ЦІЛЬ</button>
-
-        <button onclick="if(confirm('Очистити базу?')) db.ref('targets').remove()" style="background:none; border:none; color:#444; cursor:pointer; font-size:9px; text-decoration:underline;">Скинути дані</button>
-
-    </div>
-
-
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
-
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-
-
     <script>
-
-        // Прелоадер та завантаження
-
-        window.addEventListener('load', () => {
-
-            setTimeout(() => {
-
-                document.getElementById('preloader').style.opacity = '0';
-
-                setTimeout(() => {
-
-                    document.getElementById('preloader').style.display = 'none';
-
-                    const ws = document.getElementById('welcome-screen');
-
-                    ws.style.display = 'flex';
-
-                    setTimeout(() => ws.style.opacity = '1', 50);
-
-                }, 800);
-
-            }, 2000);
-
-        });
-
-
-
-        function closeWelcome() {
-
-            document.getElementById('welcome-screen').style.opacity = '0';
-
-            setTimeout(() => document.getElementById('welcome-screen').style.display = 'none', 600);
-
+        // Активуємо кнопку після капчі
+        function onVerify() {
+            const btn = document.getElementById('enter-btn');
+            btn.disabled = false;
+            btn.classList.add('active');
         }
 
+        // Запуск карти
+        function startSystem() {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('map').style.visibility = 'visible';
+            
+            // Створюємо карту з фокусом на Україну
+            const map = L.map('map', { zoomControl: false }).setView([48.3, 31.1], 6);
+            
+            // Додаємо темний стиль карти
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-
-        function toggleSettings() { document.getElementById('settings-panel').classList.toggle('active'); }
-
-
-
-        // Firebase
-
-        const firebaseConfig = { databaseURL: "https://shmap-8c0fa-default-rtdb.firebaseio.com/" };
-
-        firebase.initializeApp(firebaseConfig);
-
-        const db = firebase.database();
-
-
-
-        // Мапи
-
-        const layers = {
-
-            dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'),
-
-            sat: L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}'),
-
-            terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'),
-
-            gray: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png')
-
-        };
-
-        
-
-        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([48.3, 31.1], 6);
-
-        layers.dark.addTo(map);
-
-
-
-        function changeMap(type) {
-
-            Object.values(layers).forEach(l => map.removeLayer(l));
-
-            layers[type].addTo(map);
-
-            document.querySelectorAll('.map-option').forEach(el => el.classList.remove('active'));
-
-            document.getElementById('opt-' + type).classList.add('active');
-
+            // Тестовий маркер (Київ)
+            L.circleMarker([50.45, 30.52], {
+                radius: 7, fillColor: "#ff0000", color: "#fff", weight: 1, fillOpacity: 0.9
+            }).addTo(map).bindPopup("<b>СИСТЕМА АКТИВНА</b>");
         }
-
-
-
-        function adjustBrightness(val) { document.getElementById('map').style.filter = `brightness(${val}%)`; }
-
-        let currentIconSize = 32;
-
-        function adjustIconSize(val) { currentIconSize = val; }
-
-
-
-        // Адмінка та логіка
-
-        const typeSettings = { 'shahed': [180,220], 'recon': [100,140], 'plane': [450,850], 'rocket': [900,1300], 'ballistic': [4000,7000], 'kab': [650,950], 'prykryttia': [350,550] };
-
-        let currentType = 'shahed';
-
-        const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
-
-
-
-        if(isAdmin) {
-
-            document.getElementById('admin-ui').style.display = 'flex';
-
-            Object.keys(typeSettings).forEach(t => {
-
-                const b = document.createElement('button'); b.className = 'type-btn' + (t==='shahed'?' active':''); b.innerText = t;
-
-                b.onclick = () => { currentType = t; document.querySelectorAll('.type-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); };
-
-                document.getElementById('btns').appendChild(b);
-
-            });
-
-        }
-
-
-
-        let isL = false, sPt = null, tempM = null;
-
-        function toggleLaunch() { isL = !isL; sPt = null; if(tempM) map.removeLayer(tempM); document.getElementById('l-btn').innerText = isL?"ОБЕРІТЬ ТОЧКУ СТАРТУ":"СТВОРИТИ ЦІЛЬ"; }
-
-
-
-        map.on('click', e => {
-
-            if(!isAdmin || !isL) return;
-
-            if(!sPt) { sPt = e.latlng; tempM = L.circleMarker(sPt, {radius:6, color:'#0f0'}).addTo(map); }
-
-            else {
-
-                const angle = Math.atan2(e.latlng.lng-sPt.lng, e.latlng.lat-sPt.lat)*180/Math.PI;
-
-                const speed = Math.floor(Math.random()*(typeSettings[currentType][1]-typeSettings[currentType][0]+1))+typeSettings[currentType][0];
-
-                db.ref('targets').push({ type: currentType, start: sPt, end: e.latlng, angle, speed, startTime: Date.now() });
-
-                toggleLaunch();
-
-            }
-
-        });
-
-
-
-        const drones = {};
-
-        db.ref('targets').on('child_added', snap => {
-
-            const v = snap.val();
-
-            const icon = L.divIcon({
-
-                html: `<img src="${v.type}.png" class="drone-icon" style="width:${currentIconSize}px; height:${currentIconSize}px; transform:rotate(${v.angle}deg)" onerror="this.src='https://cdn-icons-png.flaticon.com/512/584/584011.png'; this.style.filter='invert(1) sepia(1) saturate(20) hue-rotate(-50deg)';">`,
-
-                iconSize: [currentIconSize, currentIconSize], iconAnchor: [currentIconSize/2, currentIconSize/2], className: ''
-
-            });
-
-            const marker = L.marker([v.start.lat, v.start.lng], {icon}).addTo(map);
-
-            drones[snap.key] = { marker, timer: setInterval(() => {
-
-                const p = ((Date.now()-v.startTime)/3600000*v.speed)/(map.distance(v.start, v.end)/1000);
-
-                if(p >= 1) { clearInterval(drones[snap.key].timer); db.ref('targets').child(snap.key).remove(); }
-
-                else marker.setLatLng([v.start.lat+(v.end.lat-v.start.lat)*p, v.start.lng+(v.end.lng-v.start.lng)*p]);
-
-            }, 1000) };
-
-            marker.on('click', () => {
-
-                document.getElementById('info-box').style.display='block';
-
-                document.getElementById('info-type-text').innerText = v.type.toUpperCase();
-
-                document.getElementById('info-speed').innerText = v.speed;
-
-            });
-
-        });
-
-
-
-        db.ref('targets').on('child_removed', snap => {
-
-            if(drones[snap.key]) { clearInterval(drones[snap.key].timer); map.removeLayer(drones[snap.key].marker); delete drones[snap.key]; }
-
-        });
-
     </script>
-
 </body>
-
 </html>
