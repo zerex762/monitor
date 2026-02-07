@@ -3,78 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOONITOR | Tactical Radar</title>
+    <title>MOONITOR | Live Map</title>
     
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; background: #000; font-family: sans-serif; overflow: hidden; color: #fff; }
-        #map { height: 100vh; width: 100%; background: #050505; visibility: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+        #map { height: 100vh; width: 100%; background: #050505; }
         
-        /* Екран авторизації */
-        #auth-screen { 
-            position: fixed; inset: 0; background: #000; 
-            z-index: 9999; display: flex; align-items: center; justify-content: center; 
-        }
-        .auth-box { 
-            max-width: 350px; width: 85%; padding: 30px; 
-            background: #0d0d0d; border-radius: 15px; border: 1px solid #222; text-align: center; 
-        }
-        
-        .btn-red { 
-            background: #1a1a1a; color: #444; border: none; padding: 15px; 
-            border-radius: 8px; cursor: not-allowed; width: 100%; 
-            font-weight: bold; margin-top: 20px; transition: 0.3s;
-        }
-        .btn-red.active { background: #ff0000; color: #fff; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,0,0.4); }
+        /* Стиль для іконок дронів */
+        .drone-icon { transition: all 1s linear; }
     </style>
 </head>
 <body>
 
-    <div id="auth-screen">
-        <div class="auth-box">
-            <h1 style="letter-spacing: 5px; margin-bottom: 5px;">MOONITOR</h1>
-            <p style="color: #444; font-size: 10px; margin-bottom: 25px; text-transform: uppercase;">Система моніторингу повітряних цілей</p>
-
-            <div style="display: flex; justify-content: center;">
-                <div class="cf-turnstile" 
-                     data-sitekey="0x4AAAAAAACY-UjwFSgMOGSUG" 
-                     data-callback="onVerify"
-                     data-theme="dark"></div>
-            </div>
-
-            <button id="enter-btn" class="btn-red" onclick="startSystem()" disabled>УВІЙТИ В СИСТЕМУ</button>
-        </div>
-    </div>
-
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Активуємо кнопку після капчі
-        function onVerify() {
-            const btn = document.getElementById('enter-btn');
-            btn.disabled = false;
-            btn.classList.add('active');
-        }
-
-        // Запуск карти
-        function startSystem() {
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('map').style.visibility = 'visible';
+        // Відразу запускаємо мапу при завантаженні сторінки
+        window.onload = () => {
+            const map = L.map('map', { 
+                zoomControl: false,
+                attributionControl: false 
+            }).setView([48.3, 31.1], 6);
             
-            // Створюємо карту з фокусом на Україну
-            const map = L.map('map', { zoomControl: false }).setView([48.3, 31.1], 6);
-            
-            // Додаємо темний стиль карти
+            // Темний тактичний шар мапи
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
-            // Тестовий маркер (Київ)
+            // ТЕСТОВА ЦІЛЬ (щоб ти бачив, що все працює)
             L.circleMarker([50.45, 30.52], {
-                radius: 7, fillColor: "#ff0000", color: "#fff", weight: 1, fillOpacity: 0.9
-            }).addTo(map).bindPopup("<b>СИСТЕМА АКТИВНА</b>");
-        }
+                radius: 8,
+                fillColor: "#ff0000",
+                color: "#fff",
+                weight: 2,
+                fillOpacity: 0.9
+            }).addTo(map).bindPopup("СИСТЕМА АКТИВНА");
+        };
     </script>
 </body>
 </html>
